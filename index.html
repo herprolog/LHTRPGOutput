@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      body { font-family: sans-serif; padding: 10px; }
+      textarea { width: 100%; height: 100px; margin-top: 10px; }
+    </style>
+  </head>
+  <div class="container">
+  <h3>LHTRPG 駒作成ツール</h3>
+  <input type="text" id="charId" placeholder="IDを入力">
+  <button id="mainBtn" onclick="fetchData()">データ取得</button>
+  
+  <textarea id="output" readonly></textarea>
+</div>
+
+<script>
+  let cachedJson = ""; // 取得したJSONを一時保存する変数
+
+  function fetchData() {
+    const id = document.getElementById('charId').value;
+    const output = document.getElementById('output');
+    const btn = document.getElementById('mainBtn');
+    
+    output.value = "窓口から取得中...";
+    btn.disabled = true;
+
+    google.script.run
+      .withSuccessHandler(function(json) {
+        cachedJson = json; // JSONを保存
+        output.value = json;
+        
+        // ボタンを「コピー」専用に切り替える
+        btn.disabled = false;
+        btn.innerText = "クリップボードにコピー";
+        btn.style.backgroundColor = "#28a745"; // 緑色に変える
+        btn.onclick = copyToClipboard; // 実行する関数を切り替える
+      })
+      .withFailureHandler(function(err) {
+        output.value = "エラー: " + err;
+        btn.disabled = false;
+        btn.innerText = "再試行";
+      })
+      .getCharacterData(id);
+  }
+
+  function copyToClipboard() {
+    const output = document.getElementById('output');
+    const btn = document.getElementById('mainBtn');
+
+    // ユーザーが「今」押したので、ブラウザはコピーを許可します
+    output.select();
+    try {
+      document.execCommand('copy');
+      btn.innerText = "コピー完了！";
+      setTimeout(() => {
+        btn.innerText = "データ取得";
+        btn.style.backgroundColor = "#007bff";
+        btn.onclick = fetchData;
+      }, 2000);
+    } catch (err) {
+      alert("コピーに失敗しました。枠内を全選択してコピーしてください。");
+    }
+  }
+</script>
+</html>
